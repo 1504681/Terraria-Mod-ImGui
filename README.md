@@ -33,7 +33,7 @@ Player Mods are interactable sliders to change Health, PositionX and PositionY.
 
 ![image](https://user-images.githubusercontent.com/84855585/188252755-a0b9f2c3-300e-4cb6-8745-a50819f2ed42.png)
 
-![image](https://i.imgur.com/1loXkd0.gif)
+![image](demos/1loXkd0.gif)
 
 Items are accessed from : PlayerAddr->Inventory->ItemIndex
 
@@ -43,7 +43,7 @@ Items are accessed from : PlayerAddr->Inventory->ItemIndex
 
 ImGui makes tweaking items a breeze:
 
-![image](https://i.imgur.com/NlZFqWE.gif)
+![image](demos/NlZFqWE.gif)
 
 
 // Sources:
