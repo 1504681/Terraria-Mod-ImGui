@@ -17,9 +17,11 @@ Project Goals:
 GetLocalPlayer does the same function of the Terraria::GetLocalPlayer function
 
 Ingame Function:
+
 ![image](https://user-images.githubusercontent.com/84855585/188252251-2823387e-6f05-43e7-ae32-637a7890090a.png)
 
 Our Function:
+
 ![image](https://user-images.githubusercontent.com/84855585/188252194-efbc6c7f-ca62-4474-b794-0a237733a116.png)
 
 
