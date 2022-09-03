@@ -41,7 +41,7 @@ Item Mods are read from : PlayerAddr->Inventory->ItemIndex
 
 ![image](https://user-images.githubusercontent.com/84855585/188252848-eb083ef7-1c1e-4253-8c72-1fc46706b5aa.png)
 
-ImGui makes tweeking items a breeze:
+ImGui makes tweaking items a breeze:
 
 ![image](https://i.imgur.com/NlZFqWE.gif)
 
