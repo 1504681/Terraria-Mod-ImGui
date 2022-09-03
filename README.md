@@ -35,7 +35,7 @@ Player Mods are interactable sliders to change Health, PositionX and PositionY.
 
 ![image](https://i.imgur.com/1loXkd0.gif)
 
-Item Mods are read from : PlayerAddr->Inventory->ItemIndex
+Items are accessed from : PlayerAddr->Inventory->ItemIndex
 
 ![image](https://user-images.githubusercontent.com/84855585/188252837-cc54a728-bbb1-489c-82cd-695ed0588536.png)
 
