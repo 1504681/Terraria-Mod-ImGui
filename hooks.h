@@ -20,5 +20,7 @@ namespace hooks
 	HRESULT __stdcall Reset(IDirect3DDevice9* device, D3DPRESENT_PARAMETERS* params) noexcept;
 
 
+	using DrawNPCFn = void(__thiscall*)(bool behindTiles);
+	inline DrawNPCFn DrawNPCOriginal = nullptr;
 
 }
