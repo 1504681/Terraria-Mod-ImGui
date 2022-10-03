@@ -232,9 +232,20 @@ void DrawEntity(int Index, float PlayerPosX, float PlayerPosY, ImDrawList* pDraw
 	DWORD EntityOne = *(DWORD*)(EntityList + ((Index * 0x4) + 0x8));
 
 	int AmIActive = *(int*)(EntityOne + NpcOff.active);
+	int AmIFriendly = *(int*)(EntityOne + NpcOff.friendly);
+	int AmITown = *(int*)(EntityOne + NpcOff.townNPC);
 	if (AmIActive == 0) {
 		return;
 	}
+
+	ImColor color = ImColor(255, 0, 0); // Enemy Color
+	if (AmIFriendly == 1) {
+		color = ImColor(55, 228, 181);
+	}
+	if (AmITown == 1) {
+		color = ImColor(0, 255, 0);
+	}
+
 	//std::cout << "EntityOne Addr = 0x" << std::hex << EntityOne << std::endl;
 	//std::cout << "Finding EntityOne Position..." << std::endl;
 	float EntityOneX = *(float*)(EntityOne + NpcOff.PosX);
@@ -265,7 +276,7 @@ void DrawEntity(int Index, float PlayerPosX, float PlayerPosY, ImDrawList* pDraw
 		pDrawList->AddRect(
 			ImVec2((float)(ScreenWidth / 2) + relativeX - EntityOneWidth, (float)ScreenHeight / 2 + relativeY + (EntityOneHeight / 2)),
 			ImVec2((float)(ScreenWidth / 2) + relativeX + (EntityOneWidth / 2), (float)ScreenHeight / 2 + relativeY - (EntityOneHeight / 2)),
-			ImColor(255, 192, 180), 0.0f, 0, 1.0f);
+			color, 0.0f, 0, 1.0f);
 
 	}
 }
