@@ -5,6 +5,8 @@
 #include "hacks.h"
 #include <stdexcept>
 #include <string>
+#include <iostream>
+#include <iostream>
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
 	HWND window,
 	UINT message,
@@ -199,6 +201,10 @@ void gui::Destroy() noexcept
 // Hack Stuff
 DWORD Entry = 0;
 DWORD LocalPlayerAddr = 0;
+DWORD ScreenWidthAddr = 0;
+DWORD ScreenHeightAddr = 0;
+int ScreenWidth = 0;
+int ScreenHeight = 0;
 hacks::TerrariaSignatures Sigs;
 hacks::PlayerOffsets Offsets;
 hacks::InventoryOffsets InvOffsets;
@@ -216,17 +222,98 @@ bool godMode = false;
 float savedX = NULL;
 float savedY = NULL;
 bool savedPos = false;
+bool DrawESP = false;
+
+std::vector<const char*> Logs;
+DWORD EntityList = 0;
+
+void gui::RenderESP() noexcept
+{
+	hacks::NpcOffsets npcOffsets;
+	if (signaturesScanned && DrawESP) {
+		if (ScreenHeightAddr != 0) {
+			//std::cout << "Reading ScreenDimentions" << std::endl;
+			ScreenWidth = *(int*)ScreenWidthAddr;
+			ScreenHeight = *(int*)ScreenHeightAddr;
+			//std::cout << "Screen Width = " << std::dec << ScreenWidth << std::endl;
+			//std::cout << "Screen Height = " << std::dec << ScreenHeight << std::endl;
+		}
+
+		//std::cout << "Finding PlayerDimentions..." << std::endl;
+		int PlayerWidth = *(int*)(LocalPlayerAddr + Offsets.Width);
+		int PlayerHeight = *(int*)(LocalPlayerAddr + Offsets.Height);
+		//std::cout << std::dec << "Player Width: " << PlayerWidth << std::endl;
+		//std::cout << std::dec << "Player Height: " << PlayerHeight << std::endl;
+
+		//std::cout << "Finding PlayerPosition..." << std::endl;
+		float PlayerPosX = *(float*)(LocalPlayerAddr + Offsets.PositionX);
+		float PlayerPosY = *(float*)(LocalPlayerAddr + Offsets.PositionY);
+		//std::cout << "PlayerPosX: " << PlayerPosX << std::endl;
+		//std::cout << "PlayerPosY: " << PlayerPosY << std::endl;
+
+		
+		//std::cout << "Creating Overlay..." << std::endl;
+		ImGui::SetNextWindowPos(ImVec2(0, 0));
+		ImGui::SetNextWindowSize(ImVec2(ScreenWidth, ScreenHeight));
+		ImGui::Begin("Overlay", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground);
+
+		//std::cout << "Creating DrawList..." << std::endl;
+		auto pDrawList = ImGui::GetWindowDrawList();
+
+		//std::cout << "EntityList Address = 0x" << std::hex << EntityList << std::endl;
+		//std::cout << "Dereferencing EntityOne..." << std::endl;
+		DWORD EntityOne = *(DWORD*)(EntityList + 0x8);
+		//std::cout << "EntityOne Addr = 0x" << std::hex << EntityOne << std::endl;
+		//std::cout << "Finding EntityOne Position..." << std::endl;
+		float EntityOneX = *(float*)(EntityOne + npcOffsets.PosX);
+		float EntityOneY = *(float*)(EntityOne + npcOffsets.PosY);
+		//std::cout << "EntityOneX: " << EntityOneX << std::endl;
+		//std::cout << "EntityOneY: " << EntityOneY << std::endl;
+
+		//std::cout << "Finding EntityOne Dimentions..." << std::endl;
+		int EntityOneWidth = *(int*)(EntityOne + npcOffsets.width);
+		int EntityOneHeight = *(int*)(EntityOne + npcOffsets.height);
+		//std::cout << "EntityOneWidth: " << EntityOneWidth << std::endl;
+		//std::cout << "EntityOneHeight: " << EntityOneHeight << std::endl;
+		
+
+		float relativeX = EntityOneX - PlayerPosX;
+		float relativeY = EntityOneY - PlayerPosY;
+
+		// We need to make sure the NPC is on screen (within bounds of width/2 height/2)
+		
+		if (abs(relativeX) > (ScreenWidth / 2) || (abs(relativeY) > (ScreenHeight / 2)))
+		{
+			//std::cout << "Can't Draw Offscreen NPC" << std::endl;
+		}
+		else
+		{
+			// float topLeft, bottomRight
+			//std::cout << "Trying to draw NPC" << std::endl;
+			pDrawList->AddRect(
+				ImVec2((float)(ScreenWidth / 2) + relativeX - EntityOneWidth, (float)ScreenHeight / 2 + relativeY + (EntityOneHeight / 2)),
+				ImVec2((float)(ScreenWidth / 2) + relativeX + (EntityOneWidth / 2), (float)ScreenHeight / 2 + relativeY - (EntityOneHeight / 2)),
+				ImColor(255, 192, 180),0.0f,0,1.5f);
+
+		}
+		//pDrawList->AddRect(
+			//ImVec2((ScreenWidth / 2) - (PlayerWidth /2), (ScreenHeight / 2) + (PlayerHeight/2)),
+			//ImVec2((ScreenWidth / 2) + (PlayerWidth /2), ScreenHeight / 2 - (PlayerHeight/2)),
+			//ImColor(255, 192, 180),0.05f,0,1.5f);
+
+		//pDrawList->AddText(ImVec2(ScreenWidth / 2, ScreenHeight / 2 - (PlayerHeight/2)), ImColor(255, 192, 180), "Player");
+
+		ImGui::End();
+	}
+}
 
 void gui::Render() noexcept
 {
-	ImGui_ImplDX9_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
 
 	//Imgui Menu stuff! ~~~~
 	ImGui::Begin("1504681 Menu", &open);
 	// Show Hacks only if we have signatures scanned
-	if (!signaturesScanned){
+	if (!signaturesScanned) {
 		if (ImGui::Button("Start Scan"))
 		{
 			scanning = true;
@@ -238,13 +325,14 @@ void gui::Render() noexcept
 	}
 	else {
 		// Once we have all values.
+
 		if (Entry != 0 && LocalPlayerAddr != 0) {
 			ImGui::TextColored(ImVec4(0.0f, 244.0f, 0.0f, 100.0f), "Loaded.");
-
+			ImGui::Text("WindowSize: %d x %d", ScreenHeight, ScreenWidth);
 		}
-		// Game Hacks
 		ImGui::BeginGroup();
 		ImGui::Text("Game Mods");
+		ImGui::Checkbox("Draw ESP", &DrawESP);
 		if (ImGui::Checkbox("Freeze Time", &frozenTime))
 		{
 			if (Entry != NULL) {
@@ -284,11 +372,11 @@ void gui::Render() noexcept
 		ImGui::SliderFloat("X Position", (float*)(LocalPlayerAddr + Offsets.PositionX), 0, 60000);
 		ImGui::SliderFloat("Y Position", (float*)(LocalPlayerAddr + Offsets.PositionY), 600, 25000);
 		ImGui::EndGroup();
-		
+
 		// Begin Teleport Group
 		ImGui::BeginGroup();
 		ImGui::Text("Teleports");
-		if (ImGui::Button("Save Co-ords")) 
+		if (ImGui::Button("Save Co-ords"))
 		{
 			savedPos = true;
 			savedX = *(float*)(LocalPlayerAddr + Offsets.PositionX);
@@ -326,27 +414,54 @@ void gui::Render() noexcept
 		ImGui::SliderInt("Pickaxe Power", (int*)(Slot4 + ItemOff.pick), 0, 9999);
 		ImGui::SliderInt("Hammer Power", (int*)(Slot4 + ItemOff.hammer), 0, 9999);
 		ImGui::EndGroup();
-			
 	}
 	//ImGui::ShowStyleEditor();
 	ImGui::End();
 
-	// ~~~~~~~~~~~~~~~~~~~~
-
-	ImGui::EndFrame();
-	ImGui::Render();
-	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 
 	
 	if (scanning) {
 		scanning = false;
 		hacks::TerrariaSignatures sigs;
+		std::cout << "Scanning for data..." << std::endl;
+		std::cout << "Scanning for Time Function..." << std::endl;
 		Entry = hacks::GetAddressFromSignature(sigs.TimeInstruction);
-
+		std::cout << "Scanning for LocalPlayer..." << std::endl;
 		LocalPlayerAddr = hacks::GetLocalPlayer(sigs.LocalPlayer);
+		std::cout << "Scanning for ScreenDimentions..." << std::endl;
+		
+		// ScreenDimentions
+		DWORD ScreenInstruction = hacks::GetAddressFromSignature(sigs.ScreenInstruction);
+		std::cout << "Screen Instruction at 0x" << std::hex << ScreenInstruction << std::endl;
+		std::cout << "Locating Width & Height..." << std::endl;
+		ScreenHeightAddr = *(DWORD*)(ScreenInstruction + 0x01);
+		ScreenHeight = *(int*)ScreenHeightAddr;
+		std::cout << "Screen Width = " << std::dec << ScreenWidth << std::endl;
+		ScreenWidthAddr = *(DWORD*)(ScreenInstruction - 0x50);
+		ScreenWidth = *(int*)ScreenWidthAddr;
+		std::cout << "Screen Height = " << std::dec << ScreenHeight << std::endl;
+
+
+
 		if (Entry != 0 && LocalPlayerAddr != 0) {
 			signaturesScanned = true;
+
+			//std::cout << std::dec << "ScreenHeight = " << (int)ScreenHeight << std::endl;
+			std::cout << std::hex << "Entry = 0x" << Entry << "| LocalPlayer = 0x" << LocalPlayerAddr << std::dec << std::endl;
+			//printf("ScreenWidthAddr = %d | ScreenHeightAddr = %d", ScreenWidthAddr, ScreenHeightAddr);
+			// EntityArray
+			DWORD* EntityArrayPtr = *(DWORD**)(hacks::GetAddressFromSignature(Sigs.NPCArray) - 0xD);
+			std::cout << "NPC List Ptr: 0x" << std::hex << EntityArrayPtr << std::dec << std::endl;
+			EntityList = *EntityArrayPtr;
+			std::cout << "NPC List Address: 0x" << std::hex << EntityList << std::dec << std::endl;
+			// Try Drawing an NPC
+
+			
 		}
+
+		// Hook NewNPCFn
+
+		
 	}
 }
 
@@ -369,8 +484,6 @@ LRESULT CALLBACK WindowProcess(
 	// toggle menu
 	if (GetAsyncKeyState(VK_INSERT) & 1) {
 		gui::open = !gui::open;
-
-
 	}
 
 	// Pass Messages to Imgui
