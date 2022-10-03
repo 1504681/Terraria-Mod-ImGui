@@ -209,6 +209,7 @@ hacks::TerrariaSignatures Sigs;
 hacks::PlayerOffsets Offsets;
 hacks::InventoryOffsets InvOffsets;
 hacks::ItemOffsets ItemOff;
+hacks::NpcOffsets NpcOff;
 //HackStuff (shouldnt be in gui but)
 // Scanning
 bool signaturesScanned = false;
@@ -226,6 +227,50 @@ bool DrawESP = false;
 
 std::vector<const char*> Logs;
 DWORD EntityList = 0;
+
+void DrawEntity(int Index, float PlayerPosX, float PlayerPosY, ImDrawList* pDrawList ) {
+	DWORD EntityOne = *(DWORD*)(EntityList + ((Index * 0x4) + 0x8));
+
+	int AmIActive = *(int*)(EntityOne + NpcOff.active);
+	if (AmIActive == 0) {
+		return;
+	}
+	//std::cout << "EntityOne Addr = 0x" << std::hex << EntityOne << std::endl;
+	//std::cout << "Finding EntityOne Position..." << std::endl;
+	float EntityOneX = *(float*)(EntityOne + NpcOff.PosX);
+	float EntityOneY = *(float*)(EntityOne + NpcOff.PosY);
+	//std::cout << "EntityOneX: " << EntityOneX << std::endl;
+	//std::cout << "EntityOneY: " << EntityOneY << std::endl;
+
+	//std::cout << "Finding EntityOne Dimentions..." << std::endl;
+	int EntityOneWidth = *(int*)(EntityOne + NpcOff.width);
+	int EntityOneHeight = *(int*)(EntityOne + NpcOff.height);
+	//std::cout << "EntityOneWidth: " << EntityOneWidth << std::endl;
+	//std::cout << "EntityOneHeight: " << EntityOneHeight << std::endl;
+
+
+	float relativeX = EntityOneX - PlayerPosX;
+	float relativeY = EntityOneY - PlayerPosY;
+
+	// We need to make sure the NPC is on screen (within bounds of width/2 height/2)
+
+	if (abs(relativeX) > (ScreenWidth / 2) || (abs(relativeY) > (ScreenHeight / 2)))
+	{
+		//std::cout << "Can't Draw Offscreen NPC" << std::endl;
+	}
+	else
+	{
+		// float topLeft, bottomRight
+		//std::cout << "Trying to draw NPC" << std::endl;
+		pDrawList->AddRect(
+			ImVec2((float)(ScreenWidth / 2) + relativeX - EntityOneWidth, (float)ScreenHeight / 2 + relativeY + (EntityOneHeight / 2)),
+			ImVec2((float)(ScreenWidth / 2) + relativeX + (EntityOneWidth / 2), (float)ScreenHeight / 2 + relativeY - (EntityOneHeight / 2)),
+			ImColor(255, 192, 180), 0.0f, 0, 1.0f);
+
+	}
+}
+
+
 
 void gui::RenderESP() noexcept
 {
@@ -260,48 +305,14 @@ void gui::RenderESP() noexcept
 		//std::cout << "Creating DrawList..." << std::endl;
 		auto pDrawList = ImGui::GetWindowDrawList();
 
-		//std::cout << "EntityList Address = 0x" << std::hex << EntityList << std::endl;
-		//std::cout << "Dereferencing EntityOne..." << std::endl;
-		DWORD EntityOne = *(DWORD*)(EntityList + 0x8);
-		//std::cout << "EntityOne Addr = 0x" << std::hex << EntityOne << std::endl;
-		//std::cout << "Finding EntityOne Position..." << std::endl;
-		float EntityOneX = *(float*)(EntityOne + npcOffsets.PosX);
-		float EntityOneY = *(float*)(EntityOne + npcOffsets.PosY);
-		//std::cout << "EntityOneX: " << EntityOneX << std::endl;
-		//std::cout << "EntityOneY: " << EntityOneY << std::endl;
 
-		//std::cout << "Finding EntityOne Dimentions..." << std::endl;
-		int EntityOneWidth = *(int*)(EntityOne + npcOffsets.width);
-		int EntityOneHeight = *(int*)(EntityOne + npcOffsets.height);
-		//std::cout << "EntityOneWidth: " << EntityOneWidth << std::endl;
-		//std::cout << "EntityOneHeight: " << EntityOneHeight << std::endl;
-		
+		// Draw Entities
 
-		float relativeX = EntityOneX - PlayerPosX;
-		float relativeY = EntityOneY - PlayerPosY;
+		int NumEntities = *(int*)(EntityList + 0x4);
 
-		// We need to make sure the NPC is on screen (within bounds of width/2 height/2)
-		
-		if (abs(relativeX) > (ScreenWidth / 2) || (abs(relativeY) > (ScreenHeight / 2)))
-		{
-			//std::cout << "Can't Draw Offscreen NPC" << std::endl;
+		for (int i = 0; i < NumEntities; i++) {
+			DrawEntity(i, PlayerPosX, PlayerPosY, pDrawList);
 		}
-		else
-		{
-			// float topLeft, bottomRight
-			//std::cout << "Trying to draw NPC" << std::endl;
-			pDrawList->AddRect(
-				ImVec2((float)(ScreenWidth / 2) + relativeX - EntityOneWidth, (float)ScreenHeight / 2 + relativeY + (EntityOneHeight / 2)),
-				ImVec2((float)(ScreenWidth / 2) + relativeX + (EntityOneWidth / 2), (float)ScreenHeight / 2 + relativeY - (EntityOneHeight / 2)),
-				ImColor(255, 192, 180),0.0f,0,1.5f);
-
-		}
-		//pDrawList->AddRect(
-			//ImVec2((ScreenWidth / 2) - (PlayerWidth /2), (ScreenHeight / 2) + (PlayerHeight/2)),
-			//ImVec2((ScreenWidth / 2) + (PlayerWidth /2), ScreenHeight / 2 - (PlayerHeight/2)),
-			//ImColor(255, 192, 180),0.05f,0,1.5f);
-
-		//pDrawList->AddText(ImVec2(ScreenWidth / 2, ScreenHeight / 2 - (PlayerHeight/2)), ImColor(255, 192, 180), "Player");
 
 		ImGui::End();
 	}
@@ -432,17 +443,15 @@ void gui::Render() noexcept
 		
 		// ScreenDimentions
 		DWORD ScreenInstruction = hacks::GetAddressFromSignature(sigs.ScreenInstruction);
-		
 		std::cout << "Screen Instruction at 0x" << std::hex << ScreenInstruction << std::endl;
 		std::cout << "Locating Width & Height..." << std::endl;
-		
 		ScreenHeightAddr = *(DWORD*)(ScreenInstruction + 0x01);
 		ScreenHeight = *(int*)ScreenHeightAddr;
-		std::cout << "Screen Height = " << std::dec << ScreenHeight << std::endl;
-		
+		std::cout << "Screen Width = " << std::dec << ScreenWidth << std::endl;
 		ScreenWidthAddr = *(DWORD*)(ScreenInstruction - 0x50);
 		ScreenWidth = *(int*)ScreenWidthAddr;
-		std::cout << "Screen Width = " << std::dec << ScreenWidth << std::endl;
+		std::cout << "Screen Height = " << std::dec << ScreenHeight << std::endl;
+
 
 
 		if (Entry != 0 && LocalPlayerAddr != 0) {
