@@ -1,5 +1,5 @@
 #include "hooks.h"
-
+#include <iostream>
 #include <stdexcept>
 #include <intrin.h>
 
@@ -8,12 +8,19 @@
 #include "../ext/imgui/imgui.h"
 #include "../ext/imgui/imgui_impl_win32.h"
 #include "../ext/imgui/imgui_impl_dx9.h"
+#include "hacks.h"
 
+
+DWORD NewNPCAddr = 0;
 
 void hooks::Setup()
 {
+	// Grab Functions to Hook thru sig scan
+	hacks::TerrariaSignatures sigs;
+
 	if (MH_Initialize())
 		throw std::runtime_error("Unable to initialize minhook");
+
 
 	if (MH_CreateHook(
 		VirtualFunction(gui::device, 42),
@@ -26,6 +33,7 @@ void hooks::Setup()
 		&Reset,
 		reinterpret_cast<void**>(&ResetOriginal)
 	)) throw std::runtime_error("Unable to hook Reset()");
+
 
 
 	if (MH_EnableHook(MH_ALL_HOOKS))
@@ -58,8 +66,20 @@ long __stdcall hooks::EndScene(IDirect3DDevice9* device) noexcept
 	if (!gui::setup)
 		gui::SetupMenu(device);
 
+	ImGui_ImplDX9_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+
+	gui::RenderESP();
+
 	if (gui::open)
 		gui::Render();
+
+
+	ImGui::EndFrame();
+	ImGui::Render();
+	ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 
 	return result;
 }
