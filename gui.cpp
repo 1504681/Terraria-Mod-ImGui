@@ -432,15 +432,17 @@ void gui::Render() noexcept
 		
 		// ScreenDimentions
 		DWORD ScreenInstruction = hacks::GetAddressFromSignature(sigs.ScreenInstruction);
+		
 		std::cout << "Screen Instruction at 0x" << std::hex << ScreenInstruction << std::endl;
 		std::cout << "Locating Width & Height..." << std::endl;
+		
 		ScreenHeightAddr = *(DWORD*)(ScreenInstruction + 0x01);
 		ScreenHeight = *(int*)ScreenHeightAddr;
-		std::cout << "Screen Width = " << std::dec << ScreenWidth << std::endl;
+		std::cout << "Screen Height = " << std::dec << ScreenHeight << std::endl;
+		
 		ScreenWidthAddr = *(DWORD*)(ScreenInstruction - 0x50);
 		ScreenWidth = *(int*)ScreenWidthAddr;
-		std::cout << "Screen Height = " << std::dec << ScreenHeight << std::endl;
-
+		std::cout << "Screen Width = " << std::dec << ScreenWidth << std::endl;
 
 
 		if (Entry != 0 && LocalPlayerAddr != 0) {
