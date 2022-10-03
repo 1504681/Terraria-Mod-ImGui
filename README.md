@@ -1,5 +1,6 @@
 ## Update: Oct 3rd, 2022
 
+- All signatures updated for new Terraria 1.4.4 Update
 - NPCList Signature w/ Basic NPC ESP
 - Next: Draw Health/MaxHealth as a % as a HealthBar Above ESP Box
 
