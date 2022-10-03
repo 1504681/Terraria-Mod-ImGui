@@ -3,7 +3,7 @@
 - NPCList Signature w/ Basic NPC ESP
 - Next: Draw Health/MaxHealth as a % as a HealthBar Above ESP Box
 
-![image](demos/esptest.gif)
+![image](demos/2lAJ4Xs3gK.gif)
 
 # Terraria-Mod-ImGui
 An interactive menu for terraria. (Hooked DirectX with MinHook, Graphics with ImGui)
