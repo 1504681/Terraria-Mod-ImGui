@@ -41,6 +41,7 @@ DWORD hacks::GetLocalPlayer(std::vector<int> playerSig) {
 	DWORD SigStart = GetAddressFromSignature(playerSig, 0x10000000, 0x70000000);
 
 	if (SigStart != NULL) {
+		std::cout << "Player Signature Match... Calculating Address..." << std::endl;
 		DWORD eax = *(DWORD*)(*(DWORD*)(SigStart + 0x01));
 		DWORD edx = *(DWORD*)(*(DWORD*)(SigStart + 0x07));
 		return *(DWORD*)(eax + edx * 4 + 0x08);
