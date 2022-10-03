@@ -1,6 +1,12 @@
 # Terraria-Mod-ImGui
 An interactive menu for terraria. (Hooked DirectX with MinHook, Graphics with ImGui)
 
+## Update: Oct 3rd, 2022
+
+- NPCList Signature w/ Basic ESP on NPC[0]
+- Next: Building a more simple function for ESP, and iterating through entire NPCList array.
+- Next: Draw Health/MaxHealth as a % as a HealthBar Above ESP Box
+
 Project Goals:
 - Learn how to hook DirectX9
 - Learn how to use ImGui & MinHook libraries
