@@ -37,6 +37,7 @@ namespace gui
 	void Destroy() noexcept;
 
 	void Render() noexcept;
+	void RenderESP() noexcept;
 
 	
 }
