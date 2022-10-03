@@ -12,9 +12,13 @@ void Setup(const HMODULE instance)
 {
 	try
 	{
+		AllocConsole();
+		FILE* fp;
+		freopen_s(&fp, "CONOUT$", "w", stdout); // Gimme cout logs
+
 		gui::Setup();
 		hooks::Setup();
-
+		
 	}
 	catch (const std::exception& error)
 	{
