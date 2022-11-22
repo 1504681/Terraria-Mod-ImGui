@@ -1,8 +1,8 @@
-## Update: Oct 3rd, 2022
+## Update: November 22nd 2022
 
-- All signatures updated for new Terraria 1.4.4 Update
-- NPCList Signature w/ Basic NPC ESP
-- Next: Draw Health/MaxHealth as a % as a HealthBar Above ESP Box
++ NPC ESP will not draw HealthBars under the ESP box.
+
+Next: 2D Projectile Prediction?
 
 ![image](demos/2lAJ4Xs3gK.gif)
 
