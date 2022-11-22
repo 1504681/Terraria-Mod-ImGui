@@ -7,6 +7,7 @@
 #include <string>
 #include <iostream>
 #include <iostream>
+#include <map>
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(
 	HWND window,
 	UINT message,
@@ -198,8 +199,8 @@ void gui::Destroy() noexcept
 	DestroyDirectX();
 }
 
-// Hack Stuff
-DWORD Entry = 0;
+
+DWORD TimeFunctionAddr = 0;
 DWORD LocalPlayerAddr = 0;
 DWORD ScreenWidthAddr = 0;
 DWORD ScreenHeightAddr = 0;
@@ -210,33 +211,37 @@ hacks::PlayerOffsets Offsets;
 hacks::InventoryOffsets InvOffsets;
 hacks::ItemOffsets ItemOff;
 hacks::NpcOffsets NpcOff;
-//HackStuff (shouldnt be in gui but)
-// Scanning
+hacks::_givenName nameOff;
+
+
 bool signaturesScanned = false;
 bool scanning = false;
-
 bool frozenTime = false;
 bool fastForwardTime = false;
-
 bool godMode = false;
-
 float savedX = NULL;
 float savedY = NULL;
 bool savedPos = false;
 bool DrawESP = false;
+bool DrawHealthBars = true;
 
-std::vector<const char*> Logs;
+
 DWORD EntityList = 0;
+
+std::vector<DWORD> NPCs(400, NULL);
+
 
 void DrawEntity(int Index, float PlayerPosX, float PlayerPosY, ImDrawList* pDrawList ) {
 	DWORD EntityOne = *(DWORD*)(EntityList + ((Index * 0x4) + 0x8));
-
+	
 	int AmIActive = *(int*)(EntityOne + NpcOff.active);
-	int AmIFriendly = *(int*)(EntityOne + NpcOff.friendly);
-	int AmITown = *(int*)(EntityOne + NpcOff.townNPC);
 	if (AmIActive == 0) {
 		return;
 	}
+	
+	int AmIFriendly = *(int*)(EntityOne + NpcOff.friendly);
+	int AmITown = *(int*)(EntityOne + NpcOff.townNPC);
+	
 
 	ImColor color = ImColor(255, 0, 0); // Enemy Color
 	if (AmIFriendly == 1) {
@@ -273,11 +278,48 @@ void DrawEntity(int Index, float PlayerPosX, float PlayerPosY, ImDrawList* pDraw
 	{
 		// float topLeft, bottomRight
 		//std::cout << "Trying to draw NPC" << std::endl;
+
+		ImVec2 TopLeft = ImVec2((float)(ScreenWidth / 2) + relativeX - (EntityOneWidth / 2), (float)ScreenHeight / 2 + relativeY + (EntityOneHeight / 2));
+		ImVec2 BottomRight = ImVec2((float)(ScreenWidth / 2) + relativeX + (EntityOneWidth / 2), (float)ScreenHeight / 2 + relativeY - (EntityOneHeight / 2));
+
+
+		// Draw Box Around NPC
 		pDrawList->AddRect(
-			ImVec2((float)(ScreenWidth / 2) + relativeX - EntityOneWidth, (float)ScreenHeight / 2 + relativeY + (EntityOneHeight / 2)),
+			ImVec2((float)(ScreenWidth / 2) + relativeX - (EntityOneWidth/2), (float)ScreenHeight / 2 + relativeY + (EntityOneHeight/2)),
 			ImVec2((float)(ScreenWidth / 2) + relativeX + (EntityOneWidth / 2), (float)ScreenHeight / 2 + relativeY - (EntityOneHeight / 2)),
 			color, 0.0f, 0, 1.0f);
 
+		// If DrawHealthBars is true, draw the health bar
+		
+		float percentHP = 1.0f;
+		float HealthMax = (float)*(int*)(EntityOne + NpcOff.HealthMax);
+		float fHealth = (float)*(int*)(EntityOne + NpcOff.Health);
+		percentHP = fHealth / HealthMax;
+		
+		// Debugging
+		//if (GetAsyncKeyState(VK_F1) & 1) {
+		//	std::cout << "Entity with index: " << Index << std::endl;
+		//	std::cout << "Current HP: " << fHealth << std::endl;
+		//	std::cout << "Max HP:" << HealthMax << std::endl;
+		//	printf("Percentage HP %f\n", percentHP);
+		//
+		//}
+		
+		// HealthBar Drawn Above NPC using percentHP
+		// HealthBar Positioning
+		TopLeft.y = TopLeft.y + 5;
+		BottomRight.y = TopLeft.y + 3;
+		
+		// Apply Health % To HealthBar Size
+		
+		BottomRight.x = BottomRight.x - EntityOneWidth;
+		BottomRight.x = BottomRight.x + (EntityOneWidth * percentHP);
+
+		// Color HealthBar based on percentage
+		int Green = percentHP * 255;
+		int Red = abs(Green - 255);
+		pDrawList->AddRectFilled(
+			TopLeft, BottomRight, ImColor(Red, Green, 0));
 	}
 }
 
@@ -329,6 +371,67 @@ void gui::RenderESP() noexcept
 	}
 }
 
+void ListEntity(int Index) {
+	DWORD EntityTwo = *(DWORD*)(EntityList + ((Index * 0x4) + 0x8));
+	int AmIActive = *(int*)(EntityTwo + NpcOff.active);
+	if (AmIActive == 0) {
+		return;
+	}
+	int AmIFriendly = *(int*)(EntityTwo + NpcOff.friendly);
+	int AmITown = *(int*)(EntityTwo + NpcOff.townNPC);
+
+	//DWORD nameAddr = *(DWORD*)(EntityOne + NpcOff._givenNamePtr);
+	//int nameLength = *(int*)(EntityOne + nameOff.m_stringLength);
+	//const char* npcName = (char*)(const char*)(nameAddr + nameOff.m_firstChar);
+
+	//std::cout << "Listing name" << std::endl;
+	//ImGui::Text(npcName);
+	//ImGui::SameLine();
+	if(ImGui::Button("Teleport")) {
+		// Write PlayerPositon to NPC Positon
+		if (NPCs.at(Index) != NULL) {
+			std::cout << std::hex << "0x" << NPCs.at(Index) << std::endl;
+			// Teleport to NPC
+
+			// Log NPC
+			std::cout << "Teleporting to Index: " << std::dec << Index << "." << std::endl;
+			*(float*)(LocalPlayerAddr + Offsets.PositionX) = *(float*)(NPCs.at(Index) + NpcOff.PosX);
+			*(float*)(LocalPlayerAddr + Offsets.PositionY) = *(float*)(NPCs.at(Index) + NpcOff.PosY);
+			
+		}
+		else {
+			std::cout << "EntityTwo " << std::hex << EntityTwo << std::endl;
+			std::cout << "Index = " << std::dec << Index << std::endl;
+			std::cout << "NULL because " << NPCs.at(Index) << std::endl;
+		}
+		
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Bring")) {
+		if (NPCs.at(Index) != NULL) {
+			// Teleport NPC to Player
+			
+			// Log NPC
+			std::cout << "Bringing NPC with index: " << std::dec << Index << "." << std::endl;
+			
+			*(float*)(NPCs.at(Index) + NpcOff.PosX) = *(float*)(LocalPlayerAddr + Offsets.PositionX);
+			*(float*)(NPCs.at(Index) + NpcOff.PosY) = *(float*)(LocalPlayerAddr + Offsets.PositionY);
+			
+		}
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Kill")) {
+		// Write Health = 0
+		if (NPCs.at(Index) != NULL) {
+			//*(int*)(NPCs->at(Index) + NpcOff.Health) = 0;
+			*(int*)(NPCs.at(Index) + NpcOff.Health) = 0;
+
+			std::cout << "Killing index: " << std::dec << Index << std::endl;
+		}
+	}
+
+}
+
 void gui::Render() noexcept
 {
 
@@ -348,94 +451,116 @@ void gui::Render() noexcept
 	else {
 		// Once we have all values.
 
-		if (Entry != 0 && LocalPlayerAddr != 0) {
+		if (TimeFunctionAddr != 0 && LocalPlayerAddr != 0) {
 			ImGui::TextColored(ImVec4(0.0f, 244.0f, 0.0f, 100.0f), "Loaded.");
 			ImGui::Text("WindowSize: %d x %d", ScreenHeight, ScreenWidth);
 		}
-		ImGui::BeginGroup();
-		ImGui::Text("Game Mods");
-		ImGui::Checkbox("Draw ESP", &DrawESP);
-		if (ImGui::Checkbox("Freeze Time", &frozenTime))
-		{
-			if (Entry != NULL) {
-				BYTE* freezeTime = (BYTE*)(Entry + 0x02);
-				BYTE* fastForwardTime = (BYTE*)(Entry + 0x02);
+		ImGui::BeginTabBar("Main");
+		if (ImGui::BeginTabItem("Game Mods")) {
 
-				if (!frozenTime) {
-					memset((void*)freezeTime, 0x74, 1);
-				}
-				else {
-					memset((void*)freezeTime, 0x75, 1);
-				}
+		
+			ImGui::BeginGroup();
+			ImGui::Text("Game Mods");
+			if (ImGui::Checkbox("Freeze Time", &frozenTime))
+			{
+				if (TimeFunctionAddr != NULL) {
+					BYTE* freezeTime = (BYTE*)(TimeFunctionAddr + 0x02);
+					BYTE* fastForwardTime = (BYTE*)(TimeFunctionAddr + 0x02);
 
+					if (!frozenTime) {
+						memset((void*)freezeTime, 0x74, 1);
+					}
+					else {
+						memset((void*)freezeTime, 0x75, 1);
+					}
+
+				}
 			}
-		}
-		if (ImGui::Checkbox("Fastforward Time", &frozenTime))
-		{
-			if (Entry != NULL) {
-				BYTE* freezeTime = (BYTE*)(Entry + 0x02);
-				BYTE* fastForwardTime = (BYTE*)(Entry + 0x02);
+			if (ImGui::Checkbox("Fastforward Time", &frozenTime))
+			{
+				if (TimeFunctionAddr != NULL) {
+					BYTE* freezeTime = (BYTE*)(TimeFunctionAddr + 0x02);
+					BYTE* fastForwardTime = (BYTE*)(TimeFunctionAddr + 0x02);
 
-				if (!frozenTime) {
-					memset((void*)freezeTime, 0x74, 1);
-				}
-				else {
-					memset((void*)freezeTime, 0x75, 1);
-				}
+					if (!frozenTime) {
+						memset((void*)freezeTime, 0x74, 1);
+					}
+					else {
+						memset((void*)freezeTime, 0x75, 1);
+					}
 
+				}
 			}
-		}
-		ImGui::EndGroup();
-		// Begin Player Group
-		ImGui::BeginGroup();
-		ImGui::Text("Player Mods");
-		ImGui::Checkbox("Godmode", &godMode);
-		ImGui::SliderInt("Health", (int*)(LocalPlayerAddr + Offsets.Health), 0, *(int*)(LocalPlayerAddr + Offsets.MaxHealth));
-		ImGui::SliderFloat("X Position", (float*)(LocalPlayerAddr + Offsets.PositionX), 0, 60000);
-		ImGui::SliderFloat("Y Position", (float*)(LocalPlayerAddr + Offsets.PositionY), 600, 25000);
-		ImGui::EndGroup();
+			ImGui::EndGroup();
+			// Begin Player Group
+			ImGui::BeginGroup();
+			ImGui::Text("Player Mods");
+			ImGui::Checkbox("Godmode", &godMode);
+			ImGui::SliderInt("Health", (int*)(LocalPlayerAddr + Offsets.Health), 0, *(int*)(LocalPlayerAddr + Offsets.MaxHealth));
+			ImGui::SliderFloat("X Position", (float*)(LocalPlayerAddr + Offsets.PositionX), 0, 60000);
+			ImGui::SliderFloat("Y Position", (float*)(LocalPlayerAddr + Offsets.PositionY), 600, 25000);
+			ImGui::EndGroup();
 
-		// Begin Teleport Group
-		ImGui::BeginGroup();
-		ImGui::Text("Teleports");
-		if (ImGui::Button("Save Co-ords"))
-		{
-			savedPos = true;
-			savedX = *(float*)(LocalPlayerAddr + Offsets.PositionX);
-			savedY = *(float*)(LocalPlayerAddr + Offsets.PositionY);
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Load Co-ords")) {
-			*(float*)(LocalPlayerAddr + Offsets.PositionX) = savedX;
-			*(float*)(LocalPlayerAddr + Offsets.PositionY) = savedY;
-		}
-		if (savedPos)
-		{
-			ImGui::Text("X: %f | ", savedX);
+			// Begin Teleport Group
+			ImGui::BeginGroup();
+			ImGui::Text("Teleports");
+			if (ImGui::Button("Save Co-ords"))
+			{
+				savedPos = true;
+				savedX = *(float*)(LocalPlayerAddr + Offsets.PositionX);
+				savedY = *(float*)(LocalPlayerAddr + Offsets.PositionY);
+			}
 			ImGui::SameLine();
-			ImGui::Text("Y: %f", savedY);
+			if (ImGui::Button("Load Co-ords")) {
+				*(float*)(LocalPlayerAddr + Offsets.PositionX) = savedX;
+				*(float*)(LocalPlayerAddr + Offsets.PositionY) = savedY;
+			}
+			if (savedPos)
+			{
+				ImGui::Text("X: %f | ", savedX);
+				ImGui::SameLine();
+				ImGui::Text("Y: %f", savedY);
+			}
+			ImGui::EndGroup();
+
+			// Begin Item Group
+			ImGui::BeginGroup();
+			ImGui::Text("Item Mods");
+			ImGui::Text("Item (Slot 4)");
+			DWORD InventoryAddr = *(DWORD*)(LocalPlayerAddr + Offsets.InventoryPtr);
+			DWORD Slot4 = *(DWORD*)(InventoryAddr + InvOffsets.itemSlot4);
+			ImGui::SliderInt("NetID", (int*)(Slot4 + ItemOff.netID), 0, 3000);
+			ImGui::SliderInt("StringColor", (int*)(Slot4 + ItemOff.stringColor), 0, 100);
+			ImGui::SliderInt("Stack", (int*)(Slot4 + ItemOff.stack), 1, *(int*)(Slot4 + ItemOff.maxStack));
+			ImGui::SliderInt("Damage", (int*)(Slot4 + ItemOff.damage), 0, 999);
+			ImGui::SliderInt("Knockback", (int*)(Slot4 + ItemOff.knockback), 0, 15);
+			ImGui::SliderInt("useTime", (int*)(Slot4 + ItemOff.useTime), 1, 100);
+			ImGui::SliderInt("useAnimation", (int*)(Slot4 + ItemOff.useAnimation), 1, 100);
+
+			ImGui::Text("Tool Power");
+			ImGui::SliderInt("Axe Power", (int*)(Slot4 + ItemOff.axe), 0, 9999);
+			ImGui::SliderInt("Pickaxe Power", (int*)(Slot4 + ItemOff.pick), 0, 9999);
+			ImGui::SliderInt("Hammer Power", (int*)(Slot4 + ItemOff.hammer), 0, 9999);
+			ImGui::EndGroup();
+			ImGui::EndTabItem();
+			}
+		if (ImGui::BeginTabItem("NPCs")) {
+			ImGui::Checkbox("Draw ESP", &DrawESP);
+			// Lets List Every NPC?
+			int NumEntities = *(int*)(EntityList + 0x4);
+
+			for (int i = 0; i < NumEntities; i++) {
+				DWORD EntityOne = *(DWORD*)(EntityList + ((i * 0x4) + 0x8));
+				//std::cout << "Listing Entity: 0x" << std::hex << EntityOne << std::endl;
+				NPCs.at(i) = EntityOne;
+				//std::cout << NPCs.at(i) << std::endl;
+				ListEntity(i);
+			}
+
+
+			ImGui::EndTabItem();
 		}
-		ImGui::EndGroup();
-
-		// Begin Item Group
-		ImGui::BeginGroup();
-		ImGui::Text("Item Mods");
-		ImGui::Text("Item (Slot 4)");
-		DWORD InventoryAddr = *(DWORD*)(LocalPlayerAddr + Offsets.InventoryPtr);
-		DWORD Slot4 = *(DWORD*)(InventoryAddr + InvOffsets.itemSlot4);
-		ImGui::SliderInt("NetID", (int*)(Slot4 + ItemOff.netID), 0, 3000);
-		ImGui::SliderInt("StringColor", (int*)(Slot4 + ItemOff.stringColor), 0, 100);
-		ImGui::SliderInt("Stack", (int*)(Slot4 + ItemOff.stack), 1, *(int*)(Slot4 + ItemOff.maxStack));
-		ImGui::SliderInt("Damage", (int*)(Slot4 + ItemOff.damage), 0, 999);
-		ImGui::SliderInt("Knockback", (int*)(Slot4 + ItemOff.knockback), 0, 15);
-		ImGui::SliderInt("useTime", (int*)(Slot4 + ItemOff.useTime), 1, 100);
-		ImGui::SliderInt("useAnimation", (int*)(Slot4 + ItemOff.useAnimation), 1, 100);
-
-		ImGui::Text("Tool Power");
-		ImGui::SliderInt("Axe Power", (int*)(Slot4 + ItemOff.axe), 0, 9999);
-		ImGui::SliderInt("Pickaxe Power", (int*)(Slot4 + ItemOff.pick), 0, 9999);
-		ImGui::SliderInt("Hammer Power", (int*)(Slot4 + ItemOff.hammer), 0, 9999);
-		ImGui::EndGroup();
+		ImGui::EndTabBar();
 	}
 	//ImGui::ShowStyleEditor();
 	ImGui::End();
@@ -447,7 +572,7 @@ void gui::Render() noexcept
 		hacks::TerrariaSignatures sigs;
 		std::cout << "Scanning for data..." << std::endl;
 		std::cout << "Scanning for Time Function..." << std::endl;
-		Entry = hacks::GetAddressFromSignature(sigs.TimeInstruction);
+		TimeFunctionAddr = hacks::GetAddressFromSignature(sigs.TimeInstruction);
 		std::cout << "Scanning for LocalPlayer..." << std::endl;
 		LocalPlayerAddr = hacks::GetLocalPlayer(sigs.LocalPlayer);
 		std::cout << "Scanning for ScreenDimentions..." << std::endl;
@@ -465,11 +590,11 @@ void gui::Render() noexcept
 
 
 
-		if (Entry != 0 && LocalPlayerAddr != 0) {
+		if (TimeFunctionAddr != 0 && LocalPlayerAddr != 0) {
 			signaturesScanned = true;
 
 			//std::cout << std::dec << "ScreenHeight = " << (int)ScreenHeight << std::endl;
-			std::cout << std::hex << "Entry = 0x" << Entry << "| LocalPlayer = 0x" << LocalPlayerAddr << std::dec << std::endl;
+			std::cout << std::hex << "Entry = 0x" << TimeFunctionAddr << "| LocalPlayer = 0x" << LocalPlayerAddr << std::dec << std::endl;
 			//printf("ScreenWidthAddr = %d | ScreenHeightAddr = %d", ScreenWidthAddr, ScreenHeightAddr);
 			// EntityArray
 			DWORD* EntityArrayPtr = *(DWORD**)(hacks::GetAddressFromSignature(Sigs.NPCArray) - 0xD);
