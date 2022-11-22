@@ -4,7 +4,6 @@
 
 Next: 2D Projectile Prediction?
 
-![image](demos/2lAJ4Xs3gK.gif)
 
 # Terraria-Mod-ImGui
 An interactive menu for terraria. (Hooked DirectX with MinHook, Graphics with ImGui)
@@ -54,6 +53,11 @@ Items are accessed from : PlayerAddr->Inventory->ItemIndex
 ImGui makes tweaking items a breeze:
 
 ![image](demos/NlZFqWE.gif)
+
+
+NPC ESP:
+![image](demos/2lAJ4Xs3gK.gif)
+
 
 
 // Sources:
