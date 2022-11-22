@@ -53,7 +53,7 @@ NPC ESP:
 
 ## Update: November 22nd 2022
 
-+ NPC ESP will not draw HealthBars under the ESP box.
++ NPC ESP will now draw HealthBars under the ESP box.
 
 Next: 2D Projectile Prediction?
 
