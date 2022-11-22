@@ -1,10 +1,3 @@
-## Update: November 22nd 2022
-
-+ NPC ESP will not draw HealthBars under the ESP box.
-
-Next: 2D Projectile Prediction?
-
-
 # Terraria-Mod-ImGui
 An interactive menu for terraria. (Hooked DirectX with MinHook, Graphics with ImGui)
 
@@ -57,6 +50,12 @@ ImGui makes tweaking items a breeze:
 
 NPC ESP:
 ![image](demos/2lAJ4Xs3gK.gif)
+
+## Update: November 22nd 2022
+
++ NPC ESP will not draw HealthBars under the ESP box.
+
+Next: 2D Projectile Prediction?
 
 
 
