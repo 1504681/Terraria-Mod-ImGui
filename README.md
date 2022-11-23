@@ -57,6 +57,12 @@ NPC ESP:
 
 Next: 2D Projectile Prediction?
 
+## Update November 23rd 2022
+
++ Hooked NewNPC Function!
+
+![image](demos/NewNPC.mp4)
+
 
 
 // Sources:
