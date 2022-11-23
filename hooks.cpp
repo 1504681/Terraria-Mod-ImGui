@@ -115,6 +115,6 @@ int __fastcall hooks::NewNPC(DWORD source, int X, int Target, float ai3, float a
 	}
 	
 
-	// Call original function with random NPC!
+	// Call original function with different NPC!
 	return NewNPCOriginal(source, X, Target, ai3, ai2, ai1, ai0, Start, Type + 5, Y);
 }
