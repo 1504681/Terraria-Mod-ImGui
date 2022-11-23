@@ -6,6 +6,7 @@ namespace hooks
 	void Setup();
 	void Destroy() noexcept;
 
+
 	constexpr void* VirtualFunction(void* thisptr, size_t index) noexcept
 	{
 		return (*static_cast<void***>(thisptr))[index];
@@ -19,8 +20,13 @@ namespace hooks
 	inline ResetFn ResetOriginal = nullptr;
 	HRESULT __stdcall Reset(IDirect3DDevice9* device, D3DPRESENT_PARAMETERS* params) noexcept;
 
+	
+	
 
-	using DrawNPCFn = void(__thiscall*)(bool behindTiles);
-	inline DrawNPCFn DrawNPCOriginal = nullptr;
+	using NewNPCfn = int(__fastcall*)(DWORD, int, int, float, float, float, float, int, int, int);
+	inline NewNPCfn NewNPCOriginal = nullptr;
+	int __fastcall NewNPC(DWORD source, int X, int Target, float ai3, float ai2, float ai1, float ai0, int Start, int Type, int Y) noexcept;
 
+	
+	
 }

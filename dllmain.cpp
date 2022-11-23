@@ -19,6 +19,7 @@ void Setup(const HMODULE instance)
 		gui::Setup();
 		hooks::Setup();
 		
+		
 	}
 	catch (const std::exception& error)
 	{

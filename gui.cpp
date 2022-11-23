@@ -1,4 +1,5 @@
 #include "gui.h"
+#include "hooks.h"
 #include "../ext/imgui/imgui.h"
 #include "../ext/imgui/imgui_impl_win32.h"
 #include "../ext/imgui/imgui_impl_dx9.h"
@@ -224,6 +225,7 @@ float savedY = NULL;
 bool savedPos = false;
 bool DrawESP = false;
 bool DrawHealthBars = true;
+int npcID = 0;
 
 
 DWORD EntityList = 0;
@@ -521,6 +523,13 @@ void gui::Render() noexcept
 				ImGui::SameLine();
 				ImGui::Text("Y: %f", savedY);
 			}
+
+			
+			ImGui::InputInt("NPC ID", &npcID);
+			ImGui::SameLine();
+			if (ImGui::Button("Spawn NPC")) {
+				hooks::NewNPC((DWORD)69, (int)*(float*)(LocalPlayerAddr + Offsets.PositionX) + 50, 255, 0.0f, 0.0f, 0.0f, 0.0f, 0, npcID, (int)*(float*)(LocalPlayerAddr + Offsets.PositionY) - 100);
+			}
 			ImGui::EndGroup();
 
 			// Begin Item Group
@@ -594,7 +603,7 @@ void gui::Render() noexcept
 			signaturesScanned = true;
 
 			//std::cout << std::dec << "ScreenHeight = " << (int)ScreenHeight << std::endl;
-			std::cout << std::hex << "Entry = 0x" << TimeFunctionAddr << "| LocalPlayer = 0x" << LocalPlayerAddr << std::dec << std::endl;
+			std::cout << std::hex << "TimeFunction = 0x" << TimeFunctionAddr << "| LocalPlayer = 0x" << LocalPlayerAddr << std::dec << std::endl;
 			//printf("ScreenWidthAddr = %d | ScreenHeightAddr = %d", ScreenWidthAddr, ScreenHeightAddr);
 			// EntityArray
 			DWORD* EntityArrayPtr = *(DWORD**)(hacks::GetAddressFromSignature(Sigs.NPCArray) - 0xD);

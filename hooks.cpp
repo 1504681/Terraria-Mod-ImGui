@@ -10,9 +10,6 @@
 #include "../ext/imgui/imgui_impl_dx9.h"
 #include "hacks.h"
 
-
-DWORD NewNPCAddr = 0;
-
 void hooks::Setup()
 {
 	// Grab Functions to Hook thru sig scan
@@ -34,6 +31,15 @@ void hooks::Setup()
 		reinterpret_cast<void**>(&ResetOriginal)
 	)) throw std::runtime_error("Unable to hook Reset()");
 
+
+	DWORD fNewNPCAddr = hacks::GetAddressFromSignature(sigs.fNewNPC);
+	// function is 40 bytes behind the signature
+	fNewNPCAddr -= 0x40;
+	if (MH_CreateHook(
+		reinterpret_cast<void*>(fNewNPCAddr),
+		&NewNPC,
+		reinterpret_cast<void**>(&NewNPCOriginal)
+	)) throw std::runtime_error("Unable to hook fNewNPC()");
 
 
 	if (MH_EnableHook(MH_ALL_HOOKS))
@@ -91,4 +97,24 @@ HRESULT __stdcall hooks::Reset(IDirect3DDevice9* device, D3DPRESENT_PARAMETERS* 
 	const auto result = ResetOriginal(device, device, params);
 	ImGui_ImplDX9_CreateDeviceObjects();
 	return result;
+}
+
+// NewNPCfn
+int __fastcall hooks::NewNPC(DWORD source, int X, int Target, float ai3, float ai2, float ai1, float ai0, int Start, int Type, int Y) noexcept
+{	
+	bool verbose = false;
+	
+	if (verbose) {
+		std::cout << "--------------------------" << std::endl;
+		std::cout << "NewNPC called" << std::endl;
+		std::cout << "Source Address: " << source << std::endl;
+		std::cout << "X: " << X << " Y: " << Y << " Type: " << Type << " Start:" << Start << std::endl;
+		std::cout << "ai0: " << ai0 << " ai1: " << ai1 << " ai2: " << ai2 << " ai3: " << ai3 << std::endl;
+		std::cout << "Target: " << Target << std::endl;
+		std::cout << "--------------------------" << std::endl;
+	}
+	
+
+	// Call original function with random NPC!
+	return NewNPCOriginal(source, X, Target, ai3, ai2, ai1, ai0, Start, Type + 5, Y);
 }

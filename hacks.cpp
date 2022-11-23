@@ -37,6 +37,8 @@ DWORD hacks::GetAddressFromSignature(std::vector<int> signature, DWORD startaddr
 	return NULL;
 }
 
+
+
 DWORD hacks::GetLocalPlayer(std::vector<int> playerSig) {
 	DWORD SigStart = GetAddressFromSignature(playerSig, 0x10000000, 0x70000000);
 
