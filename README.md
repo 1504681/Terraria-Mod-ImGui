@@ -61,7 +61,7 @@ Next: 2D Projectile Prediction?
 
 + Hooked NewNPC Function!
 
-![image](demos/NewNPC.mp4)
+![image](demos/NewNPC.gif)
 
 
 
