@@ -2,7 +2,7 @@
 #include <iostream>
 
 
-DWORD GetAddressFromSignature(std::vector<int> signature, DWORD startaddress, DWORD endaddress) {
+DWORD hacks::GetAddressFromSignature(std::vector<int> signature, DWORD startaddress, DWORD endaddress) {
     // Get the system information
     SYSTEM_INFO si;
     GetSystemInfo(&si);
