@@ -10,16 +10,9 @@ Project Goals:
 
 ![image](demos/1loXkd0.gif)
 
-Items are accessed from : PlayerAddr->Inventory->ItemIndex
-
-![image](https://user-images.githubusercontent.com/84855585/188252837-cc54a728-bbb1-489c-82cd-695ed0588536.png)
-
-![image](https://user-images.githubusercontent.com/84855585/188252848-eb083ef7-1c1e-4253-8c72-1fc46706b5aa.png)
-
 ImGui makes tweaking items a breeze:
 
 ![image](demos/NlZFqWE.gif)
-
 
 NPC ESP:
 ![image](demos/2lAJ4Xs3gK.gif)
